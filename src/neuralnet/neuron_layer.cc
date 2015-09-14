@@ -30,6 +30,7 @@
 namespace singa {
 
 using namespace mshadow;
+using namespace mshadow::expr;
 using mshadow::cpu;
 
 using mshadow::Shape;
@@ -41,6 +42,12 @@ using mshadow::Tensor;
 
 using std::string;
 using std::vector;
+
+#ifndef CPU_ONLY
+    #define xpu mshadow::gpu
+#else
+    #define xpu mshadow::cpu
+#endif
 
 inline Tensor<cpu, 4> Tensor4(Blob<float>* blob) {
   const vector<int>& shape = blob->shape();
@@ -65,6 +72,30 @@ inline Tensor<cpu, 2> Tensor2(Blob<float>* blob) {
 
 inline Tensor<cpu, 1> Tensor1(Blob<float>* blob) {
   Tensor<cpu, 1> tensor(blob->mutable_cpu_data(), Shape1(blob->count()));
+  return tensor;
+}
+
+inline Tensor<xpu, 4> Tensor4XPU(Blob<float>* blob) {
+  const vector<int>& shape = blob->shape();
+  Tensor<xpu, 4> tensor(blob->mutable_xpu_data(),
+	  Shape4(shape[0], shape[1], shape[2], shape[3]));
+  return tensor;
+}
+
+inline Tensor<xpu, 3> Tensor3XPU(Blob<float>* blob){
+  const vector<int>& shape = blob->shape();
+  Tensor<xpu, 3> tensor(blob->mutable_xpu_data(),
+	  Shape3(shape[0], shape[1], blob->count() / shape[0] / shape[1]));
+  return tensor;
+}
+inline Tensor<xpu, 2> Tensor2XPU(Blob<float>* blob){
+  const vector<int>& shape = blob->shape();
+  Tensor<xpu, 2> tensor(blob->mutable_xpu_data(),
+	  Shape2(shape[0], blob->count() / shape[0]));
+  return tensor;
+}
+inline Tensor<xpu, 1> Tensor1XPU(Blob<float>* blob){
+  Tensor<xpu, 1> tensor(blob->mutable_xpu_data(), Shape1(blob->count()));
   return tensor;
 }
 
@@ -112,11 +143,11 @@ void ConvolutionLayer::Setup(const LayerProto& conf,
 
 void ConvolutionLayer::ComputeFeature(int flag,
     const vector<Layer*>& srclayers) {
-  auto src = Tensor4(srclayers[0]->mutable_data(this));
-  auto data = Tensor3(&data_);
-  auto col = Tensor2(&col_data_);
-  auto weight = Tensor2(weight_->mutable_data());
-  auto bias = Tensor1(bias_->mutable_data());
+  auto src = Tensor4XPU(srclayers_[0]->mutable_data(this));
+  auto data = Tensor3XPU(&data_);
+  auto col = Tensor2XPU(&col_data_);
+  auto weight = Tensor2XPU(weight_->mutable_data());
+  auto bias = Tensor1XPU(bias_->mutable_data());
   for (int n = 0; n < batchsize_; n++) {
     if (pad_ > 0)
       col = expr::unpack_patch2col(pad(src[n], pad_), kernel_, stride_);
@@ -129,17 +160,17 @@ void ConvolutionLayer::ComputeFeature(int flag,
 
 void ConvolutionLayer::ComputeGradient(int flag,
     const vector<Layer*>& srclayers) {
-  auto src = Tensor4(srclayers[0]->mutable_data(this));
-  auto col = Tensor2(&col_data_);
-  auto weight = Tensor2(weight_->mutable_data());
-  auto grad = Tensor3(&grad_);
-  auto gcol = Tensor2(&col_grad_);
-  auto gweight = Tensor2(weight_->mutable_grad());
-  auto gbias = Tensor1(bias_->mutable_grad());
-  Blob<float>* gsrcblob = srclayers[0]->mutable_grad(this);
-  Tensor<cpu, 4> gsrc(nullptr, Shape4(batchsize_, channels_, height_, width_));
+  auto src = Tensor4XPU(srclayers_[0]->mutable_data(this));
+  auto col = Tensor2XPU(&col_data_);
+  auto weight = Tensor2XPU(weight_->mutable_data());
+  auto grad = Tensor3XPU(&grad_);
+  auto gcol = Tensor2XPU(&col_grad_);
+  auto gweight = Tensor2XPU(weight_->mutable_grad());
+  auto gbias = Tensor1XPU(bias_->mutable_grad());
+  Blob<float>* gsrcblob = srclayers_[0]->mutable_grad(this);
+  Tensor<xpu, 4> gsrc(nullptr, Shape4(batchsize_, channels_, height_, width_));
   if (gsrcblob != nullptr)
-    gsrc.dptr = gsrcblob->mutable_cpu_data();
+    gsrc.dptr = gsrcblob->mutable_xpu_data();
   gbias = expr::sumall_except_dim<1>(grad);
   gweight = 0.0f;
   Shape<3> padshp(gsrc.shape.SubShape());
@@ -158,6 +189,7 @@ void ConvolutionLayer::ComputeGradient(int flag,
           imgshp);
     }
   }
+ // weight_->mutable_data()->mutable_cpu_data();
 }
 
 /******************* Implementation for CConvolutionLayer *********/
@@ -421,10 +453,10 @@ void InnerProductLayer::Setup(const LayerProto& conf,
 
 void InnerProductLayer::ComputeFeature(int flag,
     const vector<Layer*>& srclayers) {
-  auto data = Tensor2(&data_);
-  auto src = Tensor2(srclayers[0]->mutable_data(this));
-  auto weight = Tensor2(weight_->mutable_data());
-  auto bias = Tensor1(bias_->mutable_data());
+  auto data = Tensor2XPU(&data_);
+  auto src = Tensor2XPU(srclayers_[0]->mutable_data(this));
+  auto weight = Tensor2XPU(weight_->mutable_data());
+  auto bias = Tensor1XPU(bias_->mutable_data());
   if (transpose_)
     data = dot(src, weight);
   else
@@ -435,11 +467,11 @@ void InnerProductLayer::ComputeFeature(int flag,
 
 void InnerProductLayer::ComputeGradient(int flag,
     const vector<Layer*>& srclayers) {
-  auto src = Tensor2(srclayers[0]->mutable_data(this));
-  auto grad = Tensor2(&grad_);
-  auto weight = Tensor2(weight_->mutable_data());
-  auto gweight = Tensor2(weight_->mutable_grad());
-  auto gbias = Tensor1(bias_->mutable_grad());
+  auto src = Tensor2XPU(srclayers_[0]->mutable_data(this));
+  auto grad = Tensor2XPU(&grad_);
+  auto weight = Tensor2XPU(weight_->mutable_data());
+  auto gweight = Tensor2XPU(weight_->mutable_grad());
+  auto gbias = Tensor1XPU(bias_->mutable_grad());
 
   gbias = expr::sum_rows(grad);
   if (transpose_)
@@ -447,7 +479,7 @@ void InnerProductLayer::ComputeGradient(int flag,
   else
     gweight = dot(grad.T(), src);
   if (srclayers[0]->mutable_grad(this) != nullptr) {
-    auto gsrc = Tensor2(srclayers[0]->mutable_grad(this));
+    auto gsrc = Tensor2XPU(srclayers_[0]->mutable_grad(this));
     if (transpose_)
       gsrc = dot(grad, weight.T());
     else

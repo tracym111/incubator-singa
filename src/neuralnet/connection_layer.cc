@@ -27,9 +27,9 @@ using std::vector;
 /********* Implementation for BridgeDstLayer **************/
 void BridgeDstLayer::Setup(const LayerProto& proto,
     const vector<Layer*>& srclayers) {
-  Layer::Setup(proto, srclayers);
-  CHECK_EQ(srclayers.size(), 1);
-  data_.Reshape(srclayers[0]->data(this).shape());
+  Layer::Setup(proto, npartitions);
+  CHECK_EQ(srclayers_.size(), 1);
+  data_.Reshape(srclayers_[0]->data(this).shape());
   grad_.ReshapeLike(data_);
 }
 /************* Implementation for ConcateLayer ***********/

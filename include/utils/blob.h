@@ -7,9 +7,9 @@
 * to you under the Apache License, Version 2.0 (the
 * "License"); you may not use this file except in compliance
 * with the License.  You may obtain a copy of the License at
-* 
+*
 *   http://www.apache.org/licenses/LICENSE-2.0
-* 
+*
 * Unless required by applicable law or agreed to in writing,
 * software distributed under the License is distributed on an
 * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -184,11 +184,11 @@ class Blob {
   }
   inline Dtype* mutable_xpu_data() {
     CHECK(data_);
-	#ifndef CPU_ONLY
-		return static_cast<Dtype*>(data_->mutable_gpu_data());
-	#else
-	    return static_cast<Dtype*>(data_->mutable_cpu_data());
-	#endif
+  #ifndef CPU_ONLY
+    return static_cast<Dtype*>(data_->mutable_gpu_data());
+  #else
+    return static_cast<Dtype*>(data_->mutable_cpu_data());
+  #endif
   }
   /// @brief Compute the sum of absolute values (L1 norm) of the data.
   Dtype asum_data() const;

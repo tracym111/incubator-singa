@@ -23,118 +23,120 @@
 
 #include <glog/logging.h>
 #include <algorithm>
+#include <string>
+#include <vector>
 #include "utils/singleton.h"
 #include "mshadow/tensor.h"
 #include "mshadow/cxxnet_op.h"
 
 namespace singa {
 
-  using namespace mshadow;
-  using namespace mshadow::expr;
-  using mshadow::cpu;
-  using mshadow::xpu;
+using namespace mshadow;
+using namespace mshadow::expr;
+using mshadow::cpu;
+using mshadow::xpu;
 
-  using mshadow::Shape;
-  using mshadow::Shape1;
-  using mshadow::Shape2;
-  using mshadow::Shape3;
-  using mshadow::Shape4;
-  using mshadow::Tensor;
+using mshadow::Shape;
+using mshadow::Shape1;
+using mshadow::Shape2;
+using mshadow::Shape3;
+using mshadow::Shape4;
+using mshadow::Tensor;
 
-  using std::string;
-  using std::vector;
+using std::string;
+using std::vector;
 
-  inline Tensor<cpu, 4> Tensor4CPU(Blob<float>* blob) {
-    const vector<int>& shape = blob->shape();
-    Tensor<cpu, 4> tensor(blob->mutable_cpu_data(),
-        Shape4(shape[0], shape[1], shape[2], shape[3]));
-    return tensor;
-  }
+inline Tensor<cpu, 4> Tensor4CPU(Blob<float>* blob) {
+  const vector<int>& shape = blob->shape();
+  Tensor<cpu, 4> tensor(blob->mutable_cpu_data(),
+      Shape4(shape[0], shape[1], shape[2], shape[3]));
+  return tensor;
+}
 
-  inline Tensor<cpu, 3> Tensor3CPU(Blob<float>* blob) {
-    const vector<int>& shape = blob->shape();
-    Tensor<cpu, 3> tensor(blob->mutable_cpu_data(),
-        Shape3(shape[0], shape[1], blob->count() / shape[0] / shape[1]));
-    return tensor;
-  }
+inline Tensor<cpu, 3> Tensor3CPU(Blob<float>* blob) {
+  const vector<int>& shape = blob->shape();
+  Tensor<cpu, 3> tensor(blob->mutable_cpu_data(),
+      Shape3(shape[0], shape[1], blob->count() / shape[0] / shape[1]));
+  return tensor;
+}
 
-  inline Tensor<cpu, 2> Tensor2CPU(Blob<float>* blob) {
-    const vector<int>& shape = blob->shape();
-    Tensor<cpu, 2> tensor(blob->mutable_cpu_data(),
-        Shape2(shape[0], blob->count() / shape[0]));
-    return tensor;
-  }
+inline Tensor<cpu, 2> Tensor2CPU(Blob<float>* blob) {
+  const vector<int>& shape = blob->shape();
+  Tensor<cpu, 2> tensor(blob->mutable_cpu_data(),
+      Shape2(shape[0], blob->count() / shape[0]));
+  return tensor;
+}
 
-  inline Tensor<cpu, 1> Tensor1CPU(Blob<float>* blob) {
-    Tensor<cpu, 1> tensor(blob->mutable_cpu_data(), Shape1(blob->count()));
-    return tensor;
-  }
+inline Tensor<cpu, 1> Tensor1CPU(Blob<float>* blob) {
+  Tensor<cpu, 1> tensor(blob->mutable_cpu_data(), Shape1(blob->count()));
+  return tensor;
+}
 
-  inline Tensor<xpu, 4> Tensor4(Blob<float>* blob) {
-    const vector<int>& shape = blob->shape();
-    Tensor<xpu, 4> tensor(blob->mutable_xpu_data(),
-        Shape4(shape[0], shape[1], shape[2], shape[3]));
-    return tensor;
-  }
+inline Tensor<xpu, 4> Tensor4(Blob<float>* blob) {
+  const vector<int>& shape = blob->shape();
+  Tensor<xpu, 4> tensor(blob->mutable_xpu_data(),
+      Shape4(shape[0], shape[1], shape[2], shape[3]));
+  return tensor;
+}
 
-  inline Tensor<xpu, 3> Tensor3(Blob<float>* blob){
-    const vector<int>& shape = blob->shape();
-    Tensor<xpu, 3> tensor(blob->mutable_xpu_data(),
-        Shape3(shape[0], shape[1], blob->count() / shape[0] / shape[1]));
-    return tensor;
-  }
-  inline Tensor<xpu, 2> Tensor2(Blob<float>* blob){
-    const vector<int>& shape = blob->shape();
-    Tensor<xpu, 2> tensor(blob->mutable_xpu_data(),
-        Shape2(shape[0], blob->count() / shape[0]));
-    return tensor;
-  }
-  inline Tensor<xpu, 1> Tensor1(Blob<float>* blob){
-    Tensor<xpu, 1> tensor(blob->mutable_xpu_data(), Shape1(blob->count()));
-    return tensor;
-  }
+inline Tensor<xpu, 3> Tensor3(Blob<float>* blob) {
+  const vector<int>& shape = blob->shape();
+  Tensor<xpu, 3> tensor(blob->mutable_xpu_data(),
+      Shape3(shape[0], shape[1], blob->count() / shape[0] / shape[1]));
+  return tensor;
+}
+inline Tensor<xpu, 2> Tensor2(Blob<float>* blob) {
+  const vector<int>& shape = blob->shape();
+  Tensor<xpu, 2> tensor(blob->mutable_xpu_data(),
+      Shape2(shape[0], blob->count() / shape[0]));
+  return tensor;
+}
+inline Tensor<xpu, 1> Tensor1(Blob<float>* blob) {
+  Tensor<xpu, 1> tensor(blob->mutable_xpu_data(), Shape1(blob->count()));
+  return tensor;
+}
 
-  /************ Implementation for ConvolutionLayer*************************/
-  ConvolutionLayer::~ConvolutionLayer() {
-    delete weight_;
-    delete bias_;
-  }
-  void ConvolutionLayer::Setup(const LayerProto& conf,
-      const vector<Layer*>& srclayers) {
-    CHECK_EQ(srclayers.size(), 1);
-    Layer::Setup(conf, srclayers);
-    ConvolutionProto conv_conf = conf.convolution_conf();
-    kernel_ = conv_conf.kernel();
-    CHECK_GT(kernel_, 0) << "Filter size cannot be zero.";
-    pad_ = conv_conf.pad();
-    stride_ = conv_conf.stride();
-    num_filters_ = conv_conf.num_filters();
-    if (partition_dim() > 0)
-      num_filters_ /= srclayers.at(0)->num_partitions();
-    const vector<int>& srcshape = srclayers[0]->data(this).shape();
-    int dim = srcshape.size();
-    CHECK_GT(dim, 2);
-    width_ = srcshape[dim - 1];
-    height_ = srcshape[dim - 2];
-    if (dim > 3)
-      channels_ = srcshape[dim - 3];
-    else if (dim > 2)
-      channels_ = 1;
-    batchsize_ = srcshape[0];
-    conv_height_ = (height_ + 2 * pad_ - kernel_) / stride_ + 1;
-    conv_width_ = (width_ + 2 * pad_ - kernel_) / stride_ + 1;
-    col_height_ = channels_ * kernel_ * kernel_;
-    col_width_ = conv_height_ * conv_width_;
-    vector<int> shape{batchsize_, num_filters_, conv_height_, conv_width_};
-    data_.Reshape(shape);
-    grad_.Reshape(shape);
-    col_data_.Reshape(vector<int>{col_height_, col_width_});
-    col_grad_.Reshape(vector<int>{col_height_, col_width_});
-    weight_ = Param::Create(conf.param(0));
-    bias_ = Param::Create(conf.param(1));
-    weight_->Setup(vector<int>{num_filters_, col_height_});
-    bias_->Setup(vector<int>{num_filters_});
-  }
+/************ Implementation for ConvolutionLayer*************************/
+ConvolutionLayer::~ConvolutionLayer() {
+  delete weight_;
+  delete bias_;
+}
+void ConvolutionLayer::Setup(const LayerProto& conf,
+    const vector<Layer*>& srclayers) {
+  CHECK_EQ(srclayers.size(), 1);
+  Layer::Setup(conf, srclayers);
+  ConvolutionProto conv_conf = conf.convolution_conf();
+  kernel_ = conv_conf.kernel();
+  CHECK_GT(kernel_, 0) << "Filter size cannot be zero.";
+  pad_ = conv_conf.pad();
+  stride_ = conv_conf.stride();
+  num_filters_ = conv_conf.num_filters();
+  if (partition_dim() > 0)
+    num_filters_ /= srclayers.at(0)->num_partitions();
+  const vector<int>& srcshape = srclayers[0]->data(this).shape();
+  int dim = srcshape.size();
+  CHECK_GT(dim, 2);
+  width_ = srcshape[dim - 1];
+  height_ = srcshape[dim - 2];
+  if (dim > 3)
+    channels_ = srcshape[dim - 3];
+  else if (dim > 2)
+    channels_ = 1;
+  batchsize_ = srcshape[0];
+  conv_height_ = (height_ + 2 * pad_ - kernel_) / stride_ + 1;
+  conv_width_ = (width_ + 2 * pad_ - kernel_) / stride_ + 1;
+  col_height_ = channels_ * kernel_ * kernel_;
+  col_width_ = conv_height_ * conv_width_;
+  vector<int> shape{batchsize_, num_filters_, conv_height_, conv_width_};
+  data_.Reshape(shape);
+  grad_.Reshape(shape);
+  col_data_.Reshape(vector<int>{col_height_, col_width_});
+  col_grad_.Reshape(vector<int>{col_height_, col_width_});
+  weight_ = Param::Create(conf.param(0));
+  bias_ = Param::Create(conf.param(1));
+  weight_->Setup(vector<int>{num_filters_, col_height_});
+  bias_->Setup(vector<int>{num_filters_});
+}
 
 void ConvolutionLayer::ComputeFeature(int flag,
     const vector<Layer*>& srclayers) {
@@ -184,7 +186,6 @@ void ConvolutionLayer::ComputeGradient(int flag,
           imgshp);
     }
   }
- // weight_->mutable_data()->mutable_cpu_data();
 }
 
 /******************* Implementation for CConvolutionLayer *********/

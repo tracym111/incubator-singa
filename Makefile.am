@@ -145,7 +145,7 @@ singa_LDFLAGS = -I./include \
                 -lsinga \
                 -lglog  \
                 -lprotobuf \
-                -lrt \
+                #-lrt \
                 -lopenblas \
                 -lzmq \
                 -lczmq \
@@ -181,7 +181,7 @@ singatest_LDFLAGS = -I./include \
                 -lsinga \
                 -lglog  \
                 -lprotobuf \
-                -lrt \
+                #-lrt \
                 -lopenblas \
                 -lzmq \
                 -lczmq \

@@ -52,6 +52,7 @@ SINGA_SRCS := src/driver.cc \
               src/neuralnet/neuron_layer/lrn.cc \
               src/neuralnet/neuron_layer/pooling.cc \
               src/neuralnet/neuron_layer/rbm.cc \
+              src/neuralnet/neuron_layer/gru.cc \
               src/neuralnet/neuron_layer/relu.cc \
               src/neuralnet/neuron_layer/sigmoid.cc \
               src/neuralnet/neuron_layer/stanh.cc \
@@ -120,7 +121,8 @@ TEST_SRCS := include/gtest/gtest_main.cc \
 						 src/test/test_kvfile.cc \
 						 src/test/test_store.cc \
 						 src/test/test_record_input_layer.cc \
-						 src/test/test_csv_input_layer.cc
+						 src/test/test_csv_input_layer.cc \
+             src/test/test_gru_layer.cc
 
 #EXTRA_PROGRAMS = $(PROGS)
 EXTRA_PROGRAMS = singatest test

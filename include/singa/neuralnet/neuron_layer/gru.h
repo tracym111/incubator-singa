@@ -32,6 +32,7 @@ class GRULayer : public NeuronLayer {
   void Setup(const LayerProto& proto, const vector<Layer*>& srclayers) override;
   void ComputeFeature(int flag, const vector<Layer*>& srclayers) override;
   void ComputeGradient(int flag, const vector<Layer*>& srclayers) override;
+
   const std::vector<Param*> GetParams() const override {
     std::vector<Param*> params{weight_z_hx_, weight_z_hh_, bias_z_,
                                weight_r_hx_, weight_r_hh_, bias_r_,
@@ -41,7 +42,7 @@ class GRULayer : public NeuronLayer {
 
  private:
   int batchsize_; // batch size
-  int vdim_, tdim_, hdim_; // dimensions
+  int vdim_, hdim_; // dimensions
 
   Param *weight_z_hx_, *weight_z_hh_, *bias_z_; // update gate
   Param *weight_r_hx_, *weight_r_hh_, *bias_r_; // reset gate

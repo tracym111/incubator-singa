@@ -45,16 +45,15 @@ GRULayer::~GRULayer() {
 void GRULayer::Setup(const LayerProto& conf,
     const vector<Layer*>& srclayers) {
   Layer::Setup(conf, srclayers);
-  CHECK_EQ(srclayers.size(), 1);
+  CHECK_LE(srclayers.size(), 2);
   const auto& src = srclayers[0]->data(this);
   
-  tdim_ = src.shape()[0]; // the size of time window
-  batchsize_ = src.shape()[1]; // the size of batch
-  vdim_ = src.count() / (batchsize_ * tdim_); 
+  batchsize_ = src.shape()[0]; // size of batch
+  vdim_ = src.count() / (batchsize_); // dimension of input
 
-  hdim_ = layer_conf_.gru_conf().dim_hidden();
+  hdim_ = layer_conf_.gru_conf().dim_hidden(); // dimension of hidden state
 
-  data_.Reshape(vector<int>{tdim_, batchsize_, hdim_});
+  data_.Reshape(vector<int>{batchsize_, hdim_});
   grad_.ReshapeLike(data_);
 
   // Initialize the parameters
@@ -87,7 +86,7 @@ void GRULayer::Setup(const LayerProto& conf,
 
 void GRULayer::ComputeFeature(int flag,
     const vector<Layer*>& srclayers) {
-  auto data = Tensor3(&data_);
+/*  auto data = Tensor3(&data_);
   auto src = Tensor3(srclayers[0]->mutable_data(this));
 
   auto weight_z_hx = Tensor2(weight_z_hx_->mutable_data());
@@ -123,11 +122,12 @@ void GRULayer::ComputeFeature(int flag,
     data = dot(src, weight.T());
   // repmat: repeat bias vector into batchsize rows
   data += expr::repmat(bias, batchsize_);
+  */
 }
 
-void InnerProductLayer::ComputeGradient(int flag,
+void GRULayer::ComputeGradient(int flag,
     const vector<Layer*>& srclayers) {
-  auto src = Tensor2(srclayers[0]->mutable_data(this));
+/*  auto src = Tensor2(srclayers[0]->mutable_data(this));
   auto grad = Tensor2(&grad_);
   auto weight = Tensor2(weight_->mutable_data());
   auto gweight = Tensor2(weight_->mutable_grad());
@@ -145,6 +145,7 @@ void InnerProductLayer::ComputeGradient(int flag,
     else
       gsrc = dot(grad, weight);
   }
+  */
 }
 
 }  // namespace singa

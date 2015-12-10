@@ -48,6 +48,8 @@ class GRULayer : public NeuronLayer {
   int batchsize_; // batch size
   int vdim_, hdim_; // dimensions
 
+  Blob<float> *update_gate, *reset_gate, *new_memory;
+
   Param *weight_z_hx_, *weight_z_hh_, *bias_z_; // update gate
   Param *weight_r_hx_, *weight_r_hh_, *bias_r_; // reset gate
   Param *weight_c_hx_, *weight_c_hh_, *bias_c_; // new memory

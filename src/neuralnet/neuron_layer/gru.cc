@@ -243,11 +243,14 @@ void GRULayer::ComputeGradient(int flag,
 	delete reset_dLdc_t;
 
 	// Compute gradients for data input layer
-	GEMM(cpu,1.0f,0.0f,dLdc,weight_c_hx_->data(),srclayers[0]->mutable_grad(this));
-	GEMM(cpu,1.0f,1.0f,dLdz,weight_z_hx_->data(),srclayers[0]->mutable_grad(this));
-	GEMM(cpu,1.0f,1.0f,dLdr,weight_r_hx_->data(), srclayers[0]->mutable_grad(this));
+	if (srclayers[0]->mutable_grad(this) != nullptr) {
+		GEMM(cpu,1.0f,0.0f,dLdc,weight_c_hx_->data(),srclayers[0]->mutable_grad(this));
+		GEMM(cpu,1.0f,1.0f,dLdz,weight_z_hx_->data(),srclayers[0]->mutable_grad(this));
+		GEMM(cpu,1.0f,1.0f,dLdr,weight_r_hx_->data(), srclayers[0]->mutable_grad(this));
+	}
 
-	if (srclayers.size() > 1) { // Compute gradients for context layer
+	if (srclayers.size() > 1 && srclayers[1]->mutable_grad(this) != nullptr) {
+		// Compute gradients for context layer
 		GEMM(cpu,1.0f,0.0f,reset_dLdc,weight_c_hh_->data(), srclayers[1]->mutable_grad(this));
 		GEMM(cpu,1.0f,1.0f,dLdr, weight_r_hh_->data(), srclayers[1]->mutable_grad(this));
 		GEMM(cpu,1.0f,1.0f,dLdz,weight_z_hh_->data(), srclayers[1]->mutable_grad(this));

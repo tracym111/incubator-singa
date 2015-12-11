@@ -249,30 +249,37 @@ TEST_F(GRULayerTest, ComputeFeature) {
 }
 
 
- /*
- TEST_F(CSVInputLayerTest, ComputeFeatureDeploy) {
- singa::CSVInputLayer csv;
- csv_conf.mutable_store_conf()->set_shape(0, 4);
- csv.Setup(csv_conf, std::vector<singa::Layer*>{});
- csv.ComputeFeature(singa::kDeploy, std::vector<singa::Layer*>{});
+TEST_F(GRULayerTest, ComputeGradient) {
+	singa::CSVInputLayer in_layer_1;
+	singa::CSVInputLayer in_layer_2;
 
- auto data = csv.data(nullptr);
- EXPECT_EQ(12.f, data.cpu_data()[0]);
- EXPECT_EQ(1.f, data.cpu_data()[2]);
- EXPECT_EQ(14.1f, data.cpu_data()[3]);
- EXPECT_EQ(0.2f, data.cpu_data()[5]);
- }
+	in_layer_1.Setup(in1_conf, std::vector<singa::Layer*> { });
+	in_layer_1.ComputeFeature(singa::kTrain, std::vector<singa::Layer*> { });
+	in_layer_2.Setup(in2_conf, std::vector<singa::Layer*>{ });
+	in_layer_2.ComputeFeature(singa::kTrain, std::vector<singa::Layer*> { });
 
- TEST_F(CSVInputLayerTest, SeekToFirst) {
- singa::CSVInputLayer csv;
- csv.Setup(csv_conf, std::vector<singa::Layer*>{});
- csv.ComputeFeature(singa::kTrain, std::vector<singa::Layer*>{});
- csv.ComputeFeature(singa::kTrain, std::vector<singa::Layer*>{});
 
- auto data = csv.data(nullptr);
- EXPECT_EQ(2.2f, data.cpu_data()[0]);
- EXPECT_EQ(4.1f, data.cpu_data()[2]);
- EXPECT_EQ(3.2f, data.cpu_data()[3]);
- EXPECT_EQ(14.1f, data.cpu_data()[5]);
- }
- */
+	singa::GRULayer gru_layer_1;
+	gru_layer_1.Setup(gru1_conf, std::vector<singa::Layer*>{&in_layer_1});
+	for (unsigned int i = 0; i < gru_layer_1.GetParams().size(); i ++) {
+		gru_layer_1.GetParams()[i]->InitValues();
+	}
+	gru_layer_1.ComputeFeature(singa::kTrain, std::vector<singa::Layer*>{&in_layer_1});
+
+
+	singa::GRULayer gru_layer_2;
+	gru_layer_2.Setup(gru2_conf, std::vector<singa::Layer*>{&in_layer_2, &gru_layer_1});
+	for (unsigned int i = 0; i < gru_layer_2.GetParams().size(); i ++) {
+		gru_layer_2.GetParams()[i]->InitValues();
+	}
+	gru_layer_2.ComputeFeature(singa::kTrain, std::vector<singa::Layer*>{&in_layer_2, &gru_layer_1});
+
+	// For test purpose, we set dummy values for gru_layer_2.grad_
+	for (int i = 0; i < gru_layer_2.grad(nullptr).count(); i ++) {
+		gru_layer_2.mutable_grad(nullptr)->mutable_cpu_data()[i] = 1.0f;
+	}
+	gru_layer_2.ComputeGradient(singa::kTrain, std::vector<singa::Layer*>{&in_layer_2, &gru_layer_1});
+
+	gru_layer_1.ComputeGradient(singa::kTrain, std::vector<singa::Layer*>{&in_layer_1});
+
+}

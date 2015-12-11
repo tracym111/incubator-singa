@@ -40,21 +40,23 @@ protected:
 		std::string path1 = "src/test/gru-in-1.csv"; // path of a csv file
 		std::ofstream ofs1(path1, std::ofstream::out);
 		ASSERT_TRUE(ofs1.is_open());
-		ofs1 << "0,0,0,1,0\n";
-		ofs1 << "0,1,0,0,0\n";
+		ofs1 << "0,0,0,1\n";
+		ofs1 << "0,0,1,0\n";
 		ofs1.close();
 		auto conf1 = in1_conf.mutable_store_conf();
 		conf1->set_path(path1);
 		conf1->set_batchsize(2);
 		conf1->add_shape(4);
 		conf1->set_backend("textfile");
+		conf1->set_has_label(false);
+
 
 		// Initialize the settings for the second input-layer
 		std::string path2 = "src/test/gru-in-2.csv"; // path of a csv file
 		std::ofstream ofs2(path2, std::ofstream::out);
 		ASSERT_TRUE(ofs2.is_open());
-		ofs2 << "0,1,0,0,1\n";
-		ofs2 << "0,0,0,0,0\n";
+		ofs2 << "0,1,0,0\n";
+		ofs2 << "1,0,0,0\n";
 		ofs2.close();
 		auto conf2 = in2_conf.mutable_store_conf();
 		conf2->set_path(path2);
@@ -62,6 +64,8 @@ protected:
 		conf2->set_batchsize(2);
 		conf2->add_shape(4);
 		conf2->set_backend("textfile");
+		conf2->set_has_label(false);
+
 
 		gru1_conf.mutable_gru_conf() -> set_dim_hidden(2);
 		gru1_conf.mutable_gru_conf() -> set_bias_term(true);
@@ -240,7 +244,7 @@ TEST_F(GRULayerTest, ComputeFeature) {
 	}
 	gru_layer_2.ComputeFeature(singa::kTrain, std::vector<singa::Layer*>{&in_layer_2, &gru_layer_1});
 	for (int i = 0; i < gru_layer_2.data(nullptr).count(); i ++) {
-		EXPECT_GT(0.000001,abs(0.353009-gru_layer_2.data(nullptr).cpu_data()[i]));
+		EXPECT_GT(0.000001,abs(0.346753-gru_layer_2.data(nullptr).cpu_data()[i]));
 	}
 }
 

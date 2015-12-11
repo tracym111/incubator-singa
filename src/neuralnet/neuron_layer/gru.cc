@@ -156,11 +156,6 @@ void GRULayer::ComputeFeature(int flag,
 	Mult<float>(cpu,*update_gate,*context,&data_prev);
 	Add<float>(cpu, data_, data_prev, &data_);
 
-	// TODO: only for test!!!!
-	for (int i = 0; i < src.count(); i ++) {
-		cout << "tmp: " << src.cpu_data()[i] << endl;
-	}
-
 	// delete the pointers
 	if (srclayers.size() == 1) delete context;
 	else context = NULL;
@@ -247,7 +242,7 @@ void GRULayer::ComputeGradient(int flag,
 	GEMM(cpu,1.0f,0.0f,*reset_dLdc_t,*context,weight_c_hh_->mutable_grad());
 	delete reset_dLdc_t;
 
-	// Compute gradients for input layer
+	// Compute gradients for data input layer
 	GEMM(cpu,1.0f,0.0f,dLdc,weight_c_hx_->data(),srclayers[0]->mutable_grad(this));
 	GEMM(cpu,1.0f,1.0f,dLdz,weight_z_hx_->data(),srclayers[0]->mutable_grad(this));
 	GEMM(cpu,1.0f,1.0f,dLdr,weight_r_hx_->data(), srclayers[0]->mutable_grad(this));

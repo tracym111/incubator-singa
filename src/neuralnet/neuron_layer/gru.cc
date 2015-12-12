@@ -67,29 +67,32 @@ void GRULayer::Setup(const LayerProto& conf,
 
   // Initialize the parameters
   weight_z_hx_ = Param::Create(conf.param(0));
-  weight_z_hh_ = Param::Create(conf.param(1));
-  bias_z_ = Param::Create(conf.param(2));
+  weight_r_hx_ = Param::Create(conf.param(1));
+  weight_c_hx_ = Param::Create(conf.param(2));
 
-  weight_r_hx_ = Param::Create(conf.param(3));
+  weight_z_hh_ = Param::Create(conf.param(3));
   weight_r_hh_ = Param::Create(conf.param(4));
-  bias_r_ = Param::Create(conf.param(5)); 
+  weight_c_hh_ = Param::Create(conf.param(5));
 
-  weight_c_hx_ = Param::Create(conf.param(6));
-  weight_c_hh_ = Param::Create(conf.param(7));
-  bias_c_ = Param::Create(conf.param(8));
-  
-  
+  if (conf.gru_conf().bias_term()) {
+	  bias_z_ = Param::Create(conf.param(6));
+	  bias_r_ = Param::Create(conf.param(7));
+	  bias_c_ = Param::Create(conf.param(8));
+  }
+
   weight_z_hx_->Setup(vector<int>{hdim_, vdim_});
-  weight_z_hh_->Setup(vector<int>{hdim_, hdim_});
-  bias_z_->Setup(vector<int>{hdim_});
-
   weight_r_hx_->Setup(vector<int>{hdim_, vdim_});
-  weight_r_hh_->Setup(vector<int>{hdim_, hdim_});
-  bias_r_->Setup(vector<int>{hdim_});
-
   weight_c_hx_->Setup(vector<int>{hdim_, vdim_});
+
+  weight_z_hh_->Setup(vector<int>{hdim_, hdim_});
+  weight_r_hh_->Setup(vector<int>{hdim_, hdim_});
   weight_c_hh_->Setup(vector<int>{hdim_, hdim_});
-  bias_c_->Setup(vector<int>{hdim_});
+
+  if (conf.gru_conf().bias_term()) {
+	  bias_z_->Setup(vector<int>{hdim_});
+	  bias_r_->Setup(vector<int>{hdim_});
+	  bias_c_->Setup(vector<int>{hdim_});
+  }
 
   update_gate = new Blob<float>(batchsize_, hdim_);
   reset_gate = new Blob<float>(batchsize_, hdim_);
@@ -120,7 +123,8 @@ void GRULayer::ComputeFeature(int flag,
 
 	// Compute the update gate
 	GEMM(cpu, 1.0f, 0.0f, src,*w_z_hx_t,update_gate);
-	MVAddRow(cpu,1.0f,1.0f,bias_z_->data(),update_gate);
+	if (bias_z_ != nullptr)
+		MVAddRow(cpu,1.0f,1.0f,bias_z_->data(),update_gate);
 	Blob<float> zprev (batchsize_,hdim_);
 	GEMM(cpu, 1.0f, 0.0f, *context,*w_z_hh_t, &zprev);
 	Add<float>(cpu, *update_gate, zprev, update_gate);
@@ -128,7 +132,8 @@ void GRULayer::ComputeFeature(int flag,
 
 	// Compute the reset gate
 	GEMM(cpu, 1.0f, 0.0f, src,*w_r_hx_t,reset_gate);
-	MVAddRow(cpu,1.0f,1.0f,bias_r_->data(),reset_gate);
+	if (bias_r_ != nullptr)
+		MVAddRow(cpu,1.0f,1.0f,bias_r_->data(),reset_gate);
 	Blob<float> rprev (batchsize_, hdim_);
 	GEMM(cpu, 1.0f, 0.0f, *context, *w_r_hh_t, &rprev);
 	Add<float>(cpu, *reset_gate, rprev, reset_gate);
@@ -136,7 +141,8 @@ void GRULayer::ComputeFeature(int flag,
 
 	// Compute the new memory
 	GEMM(cpu, 1.0f, 0.0f, src, *w_c_hx_t, new_memory);
-	MVAddRow(cpu, 1.0f,1.0f,bias_c_->data(), new_memory);
+	if (bias_c_ != nullptr)
+		MVAddRow(cpu, 1.0f,1.0f,bias_c_->data(), new_memory);
 	Blob<float> cprev (batchsize_, hdim_);
 	GEMM(cpu, 1.0f, 0.0f, *context, *w_c_hh_t, &cprev);
 	Mult<float>(cpu, *reset_gate, cprev, &cprev);
@@ -222,20 +228,23 @@ void GRULayer::ComputeGradient(int flag,
 	Blob<float> *dLdz_t = Transpose(dLdz);
 	GEMM(cpu,1.0f,0.0f,*dLdz_t,src,weight_z_hx_->mutable_grad());
 	GEMM(cpu,1.0f,0.0f,*dLdz_t,*context,weight_z_hh_->mutable_grad());
-	MVSumRow<float>(cpu,1.0f,0.0f,dLdz,bias_z_->mutable_grad());
+	if (bias_z_ != nullptr)
+		MVSumRow<float>(cpu,1.0f,0.0f,dLdz,bias_z_->mutable_grad());
 	delete dLdz_t;
 
 	// Compute gradients for parameters of reset gate
 	Blob<float> *dLdr_t = Transpose(dLdr);
 	GEMM(cpu,1.0f,0.0f,*dLdr_t,src,weight_r_hx_->mutable_grad());
 	GEMM(cpu,1.0f,0.0f,*dLdr_t,*context,weight_r_hh_->mutable_grad());
-	MVSumRow(cpu,1.0f,0.0f,dLdr,bias_r_->mutable_grad());
+	if (bias_r_ != nullptr)
+		MVSumRow(cpu,1.0f,0.0f,dLdr,bias_r_->mutable_grad());
 	delete dLdr_t;
 
 	// Compute gradients for parameters of new memory
 	Blob<float> *dLdc_t = Transpose(dLdc);
 	GEMM(cpu,1.0f,0.0f,*dLdc_t,src,weight_c_hx_->mutable_grad());
-	MVSumRow(cpu,1.0f,0.0f,dLdc,bias_c_->mutable_grad());
+	if (bias_c_ != nullptr)
+		MVSumRow(cpu,1.0f,0.0f,dLdc,bias_c_->mutable_grad());
 	delete dLdc_t;
 
 	Blob<float> *reset_dLdc_t = Transpose(reset_dLdc);

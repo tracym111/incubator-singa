@@ -40,10 +40,6 @@ class GRULayer : public NeuronLayer {
     return params;
   }
 
-  int vdim() const { return vdim_;}
-  int hdim() const { return hdim_;}
-  int batchsize() const {return batchsize_;}
-
  private:
   int batchsize_; // batch size
   int vdim_, hdim_; // dimensions

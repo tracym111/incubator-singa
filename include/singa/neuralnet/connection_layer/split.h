@@ -35,12 +35,12 @@ namespace singa {
  */
 class SplitLayer : public ConnectionLayer {
  public:
+  ~SplitLayer();
   void Setup(const LayerProto& proto, const vector<Layer*>& srclayers) override;
   void ComputeFeature(int flag, const vector<Layer*>& srclayers) override;
   void ComputeGradient(int flag, const vector<Layer*>& srclayers) override;
-
- protected:
-  Blob<float> grads_;
+  const Blob<float>& grad(const Layer* from) const override;
+  Blob<float>* mutable_grad(const Layer* from) override;
 };
 
 }  // namespace singa

@@ -19,26 +19,24 @@
 *
 *************************************************************/
 
-#ifndef SINGA_NEURALNET_NEURON_LAYER_SIGMOID_H_
-#define SINGA_NEURALNET_NEURON_LAYER_SIGMOID_H_
+/*interface file for swig */
 
-#include <vector>
-#include "singa/neuralnet/layer.h"
-#include "singa/proto/job.pb.h"
+%module driver
+%include "std_vector.i"
+%include "std_string.i"
+%include "argcargv.i"
+%apply (int ARGC, char **ARGV) { (int argc, char **argv)  }
+%{
+#include "singa/driver.h"
+%}
 
-namespace singa {
-/**
- * This layer apply Sigmoid function to neuron activations.
- * f(x)=1/(1+exp(-x))
- * f'(x)=f(x)*(1-f(x))
- */
-class SigmoidLayer: public Layer {
- public:
-  void Setup(const LayerProto& proto, const vector<Layer*>& srclayers) override;
-  void ComputeFeature(int flag, const vector<Layer*>& srclayers) override;
-  void ComputeGradient(int flag, const vector<Layer*>& srclayers) override;
+namespace singa{
+using std::vector;
+class Driver{
+public:
+void Train(bool resume, const std::string job_conf);
+void Init(int argc, char **argv);
+void InitLog(char* arg);
 };
+}
 
-}  // namespace singa
-
-#endif  // SINGA_NEURALNET_NEURON_LAYER_SIGMOID_H_

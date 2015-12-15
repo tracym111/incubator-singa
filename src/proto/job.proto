@@ -197,8 +197,8 @@ message LayerProto {
   optional ArgSortProto argsort_conf = 52;
   // configuration for convolution layer
   optional ConvolutionProto convolution_conf = 30;
-  // configuration for concatenation layer
-  optional ConcateProto concate_conf = 31;
+  // configuration for dummy layer
+  optional DummyProto dummy_conf = 53;
   // configuration for dropout layer
   optional DropoutProto dropout_conf = 33;
   // configuration for inner product layer
@@ -221,12 +221,8 @@ message LayerProto {
   optional RGBImageProto rgbimage_conf = 39;
   // configuration for data layer
   optional DataProto sharddata_conf = 32;
-  // configuration for slice layer
-  optional SliceProto slice_conf = 41;
   // configuration for softmax loss layer
   optional SoftmaxLossProto softmaxloss_conf = 40;
-  // configuration for split layer
-  optional SplitProto split_conf = 42;
   // configuration for store input layers
   optional StoreProto store_conf = 51;
   // configuration for gru layer
@@ -324,10 +320,6 @@ message PrefetchProto {
   repeated LayerProto sublayers = 1;
 }
 
-message SplitProto {
-  optional int32 num_splits = 1 [default = 1];
-}
-
 message StoreProto {
   optional string backend = 1;
   optional string path = 2;
@@ -368,11 +360,6 @@ message ConvolutionProto {
   optional bool bias_term = 32 [default = true];
 }
 
-message ConcateProto {
-  // on which dimension, starts from 0
-  required int32 concate_dim = 1;
-}
-
 message DataProto {
   // path to the data file/folder, absolute or relative to the workspace
   required string path = 2;
@@ -399,6 +386,13 @@ message MnistProto {
   // scale to this size as input for deformation
   optional int32 resize = 35 [default = 0] ;
   optional int32 elastic_freq = 36 [default = 0];
+}
+
+message DummyProto {
+  // shape of data and grad blobs
+  optional bool input = 1 [default = false]; 
+  optional bool output = 2 [default = false]; 
+  repeated int32 shape = 3; 
 }
 
 // Message that stores parameters used by DropoutLayer
@@ -456,10 +450,6 @@ message PoolingProto {
   optional uint32 pad = 31 [default = 0];
   // The stride
   optional uint32 stride = 32 [default = 1];
-}
-
-message SliceProto {
-  required int32 slice_dim = 1;
 }
 
 message ReLUProto {

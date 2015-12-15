@@ -19,31 +19,33 @@
 *
 *************************************************************/
 
-#ifndef SINGA_NEURALNET_CONNECTION_LAYER_SLICE_H_
-#define SINGA_NEURALNET_CONNECTION_LAYER_SLICE_H_
+#ifndef SINGA_NEURALNET_NEURON_LAYER_DUMMY_H_
+#define SINGA_NEURALNET_NEURON_LAYER_DUMMY_H_
 
+#include <random>
 #include <vector>
 #include "singa/neuralnet/layer.h"
+#include "singa/proto/job.pb.h"
 
 namespace singa {
 /**
- * Connect a single (src) layer with multiple (dst) layers.
+ * This layer is dummy and do no real work.
+ * It is used for testing purpose only.
  *
- * It slices the feature Blob (i.e., matrix) of the src layer on one dimension.
- * The sliced feature Blobs will be fed into dst layers.
+ * Use it as input layer, it will generate random data;
+ * Use it as output layer, it will generate random grad;
+ * Use it as neuron layer, it will replicates data and grad.
  */
-class SliceLayer : public ConnectionLayer {
+class DummyLayer: public Layer {
  public:
-  ~SliceLayer();
   void Setup(const LayerProto& proto, const vector<Layer*>& srclayers) override;
   void ComputeFeature(int flag, const vector<Layer*>& srclayers) override;
   void ComputeGradient(int flag, const vector<Layer*>& srclayers) override;
-  const Blob<float>& data(const Layer* from) const override;
-  const Blob<float>& grad(const Layer* from) const override;
-  Blob<float>* mutable_data(const Layer* from) override;
-  Blob<float>* mutable_grad(const Layer* from) override;
+ private:
+  bool input_ = false;  // use as input layer
+  bool output_ = false;  // use as output layer
 };
 
 }  // namespace singa
 
-#endif  // SINGA_NEURALNET_CONNECTION_LAYER_SLICE_H_
+#endif  // SINGA_NEURALNET_NEURON_LAYER_DUMMY_H_

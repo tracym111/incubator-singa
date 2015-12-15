@@ -42,13 +42,13 @@ using namespace singa;
 class UnrollingTest: public ::testing::Test {
 protected:
 	virtual void SetUp() {
-		ReadProtoFromTextFile("src/test/unroll-test-1.conf", &job_conf);
+		ReadProtoFromTextFile("examples/gru/gru-one-one.conf", &job_conf);
 	}
 
 	singa::JobProto job_conf;
 };
 
-TEST_F(UnrollingTest, Train) {
+TEST_F(UnrollingTest, GRUOneToOne) {
 	singa::Driver driver;
 	driver.RegisterLayer<GRULayer, int> (kGRU);
 	driver.RegisterLayer<RecordInputLayer,int>(kRecordInput);

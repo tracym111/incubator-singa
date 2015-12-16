@@ -55,16 +55,16 @@ if test "$cuda_prefix" == "yes"; then
     fi
 fi
 
-AC_MSG_CHECKING([nvcc in $cuda_prefix/bin])
-if test -x "$cuda_prefix/bin/nvcc"; then
-    AC_MSG_RESULT([found])
-    AC_DEFINE_UNQUOTED([NVCC_PATH], ["$cuda_prefix/bin/nvcc"], [Path to nvcc binary])
-else
-    AC_MSG_RESULT([not found!])
-    AC_MSG_FAILURE([nvcc was not found in $cuda_prefix/bin])
-fi
 
 if test x"$cudaval" = x"yes"; then
+	AC_MSG_CHECKING([nvcc in $cuda_prefix/bin])
+	if test -x "$cuda_prefix/bin/nvcc"; then
+	    AC_MSG_RESULT([found])
+	    AC_DEFINE_UNQUOTED([NVCC_PATH], ["$cuda_prefix/bin/nvcc"], [Path to nvcc binary])
+	else
+	    AC_MSG_RESULT([not found!])
+	    AC_MSG_FAILURE([nvcc was not found in $cuda_prefix/bin])
+	fi
     CUDA_CFLAGS="-I$cuda_prefix/include"
     CUDA_LDFLAGS="-L$cuda_prefix/lib64 -L$cuda_prefix/lib"
     CUDA_LIBS="-lcublas -lcudart -lcurand"

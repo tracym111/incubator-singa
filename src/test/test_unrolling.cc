@@ -46,38 +46,52 @@ using namespace singa;
 class UnrollingTest: public ::testing::Test {
 protected:
 	virtual void SetUp() {
+		ReadProtoFromTextFile("examples/rbm/autoencoder.conf", &job_conf1);
 		ReadProtoFromTextFile("examples/gru/gru-unroll-2.conf", &job_conf1);
 		ReadProtoFromTextFile("examples/gru/gru-unroll-1.conf", &job_conf2);
 	}
 
+	singa::JobProto job_conf0;
 	singa::JobProto job_conf1;
 	singa::JobProto job_conf2;
 };
 
-TEST_F(UnrollingTest, GRUUnroll1) {
+TEST_F(UnrollingTest, AutoEncoder) {
 	singa::Driver driver;
 	driver.RegisterLayer<GRULayer, int> (kGRU);
 	driver.RegisterLayer<RecordInputLayer,int>(kRecordInput);
 	driver.RegisterLayer<InnerProductLayer,int>(kInnerProduct);
 	driver.RegisterLayer<DummyLayer,int>(kDummy);
 	driver.RegisterLayer<SoftmaxLayer,int>(kSoftmax);
+	driver.RegisterLayer<SigmoidLayer, int>(kSigmoid);
 	driver.RegisterLayer<SplitLayer, int>(kSplit);
 
 	driver.RegisterLayer<SoftmaxLossLayer, int>(kSoftmaxLoss);
 	driver.RegisterLayer<EuclideanLossLayer,int>(kEuclideanLoss);
 
-	//driver.RegisterParam<Param>(0);
-	//driver.RegisterParamGenerator<UniformGen>(kUniform);
+
 
 	JobProto job;
-	job.CopyFrom(job_conf1);
-//	cout << "Create Train Net" << endl;
-//	NeuralNet* train_net = NeuralNet::Create(job.neuralnet(), kTrain, 1);
-//	cout << "# of layers in Train Net: " << train_net->layers().size();
+	job.CopyFrom(job_conf0);
+	cout << "Create Train Net" << endl;
+	NeuralNet* train_net = NeuralNet::Create(job.neuralnet(), kTrain, 1);
+	cout << "# of layers in Train Net: " << train_net->layers().size();
 
-	//cout << "Create Test Net" << endl;
-	//NeuralNet* test_net = NeuralNet::Create(job_conf.neuralnet(), kTest, 1);
-	//cout << "# of layers in Test Net: " << test_net->layers().size() << endl;
+	cout << "Create Test Net" << endl;
+	NeuralNet* test_net = NeuralNet::Create(job.neuralnet(), kTest, 1);
+	cout << "# of layers in Test Net: " << test_net->layers().size() << endl;
+}
+
+TEST_F(UnrollingTest, GRUUnroll1) {
+	JobProto job;
+	job.CopyFrom(job_conf1);
+	cout << "Create Train Net" << endl;
+	NeuralNet* train_net = NeuralNet::Create(job.neuralnet(), kTrain, 1);
+	cout << "# of layers in Train Net: " << train_net->layers().size();
+
+	cout << "Create Test Net" << endl;
+	NeuralNet* test_net = NeuralNet::Create(job.neuralnet(), kTest, 1);
+	cout << "# of layers in Test Net: " << test_net->layers().size() << endl;
 }
 
 TEST_F(UnrollingTest, GRUUnroll2) {

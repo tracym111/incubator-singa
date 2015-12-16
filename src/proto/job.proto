@@ -594,6 +594,7 @@ enum LayerType {
   kSlice = 12;
   kSplit = 13;
 
+  kDummy = 50;
 
   // Indicate the user defined layer. Users should configure user_type
   kUserLayer = 102;

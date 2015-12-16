@@ -36,6 +36,7 @@ using namespace std;
 #include "singa/neuralnet/loss_layer/softmax.h"
 #include "singa/neuralnet/neuralnet.h"
 #include "singa/neuralnet/input_layer/csv.h"
+#include "singa/neuralnet/connection_layer/split.h"
 #include "singa/driver.h"
 #include "singa/proto/job.pb.h"
 #include "singa/utils/common.h"
@@ -45,20 +46,22 @@ using namespace singa;
 class UnrollingTest: public ::testing::Test {
 protected:
 	virtual void SetUp() {
-		ReadProtoFromTextFile("examples/gru/gru-one-one.conf", &job_conf);
+		ReadProtoFromTextFile("examples/gru/gru-unroll-2.conf", &job_conf1);
+		ReadProtoFromTextFile("examples/gru/gru-unroll-1.conf", &job_conf2);
 	}
 
-	singa::JobProto job_conf;
+	singa::JobProto job_conf1;
+	singa::JobProto job_conf2;
 };
 
-TEST_F(UnrollingTest, GRUOneToOne) {
+TEST_F(UnrollingTest, GRUUnroll1) {
 	singa::Driver driver;
 	driver.RegisterLayer<GRULayer, int> (kGRU);
 	driver.RegisterLayer<RecordInputLayer,int>(kRecordInput);
 	driver.RegisterLayer<InnerProductLayer,int>(kInnerProduct);
 	driver.RegisterLayer<DummyLayer,int>(kDummy);
 	driver.RegisterLayer<SoftmaxLayer,int>(kSoftmax);
-
+	driver.RegisterLayer<SplitLayer, int>(kSplit);
 
 	driver.RegisterLayer<SoftmaxLossLayer, int>(kSoftmaxLoss);
 	driver.RegisterLayer<EuclideanLossLayer,int>(kEuclideanLoss);
@@ -67,8 +70,24 @@ TEST_F(UnrollingTest, GRUOneToOne) {
 	//driver.RegisterParamGenerator<UniformGen>(kUniform);
 
 	JobProto job;
-	job.CopyFrom(job_conf);
-	NeuralNet* net = NeuralNet::Create(job_conf.neuralnet(), kTrain, 1);
-	//cout << net->layers().size() << endl;
+	job.CopyFrom(job_conf1);
+//	cout << "Create Train Net" << endl;
+//	NeuralNet* train_net = NeuralNet::Create(job.neuralnet(), kTrain, 1);
+//	cout << "# of layers in Train Net: " << train_net->layers().size();
+
+	//cout << "Create Test Net" << endl;
+	//NeuralNet* test_net = NeuralNet::Create(job_conf.neuralnet(), kTest, 1);
+	//cout << "# of layers in Test Net: " << test_net->layers().size() << endl;
 }
 
+TEST_F(UnrollingTest, GRUUnroll2) {
+	JobProto job;
+	job.CopyFrom(job_conf2);
+	cout << "Create Train Net" << endl;
+	NeuralNet* train_net = NeuralNet::Create(job.neuralnet(), kTrain, 1);
+	cout << "# of layers in Train Net: " << train_net->layers().size();
+
+	cout << "Create Test Net" << endl;
+	NeuralNet* test_net = NeuralNet::Create(job.neuralnet(), kTest, 1);
+	cout << "# of layers in Test Net: " << test_net->layers().size() << endl;
+}

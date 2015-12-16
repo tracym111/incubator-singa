@@ -188,8 +188,8 @@ message LayerProto {
   optional string user_type =21;
   
   optional int32 unroll_len = 22;
-  optional UnrollConnType unroll_conn_type = 23 [default = kUnrollOneToOne];
-  optional int32 shift = 24 [default = 0];
+  repeated UnrollConnType unroll_conn_type = 23 [default = kUnrollOneToOne];
+  repeated int32 shift = 24 [default = 0];
   repeated int32 unroll_src_conn = 25;
 
   // proto for the specific layer
@@ -597,6 +597,7 @@ enum LayerType {
 
   // Indicate the user defined layer. Users should configure user_type
   kUserLayer = 102;
+  
 }
 
 enum PartitionType {

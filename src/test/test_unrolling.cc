@@ -46,7 +46,7 @@ using namespace singa;
 class UnrollingTest: public ::testing::Test {
 protected:
 	virtual void SetUp() {
-		ReadProtoFromTextFile("examples/rbm/autoencoder.conf", &job_conf1);
+		ReadProtoFromTextFile("examples/rbm/autoencoder.conf", &job_conf0);
 		ReadProtoFromTextFile("examples/gru/gru-unroll-2.conf", &job_conf1);
 		ReadProtoFromTextFile("examples/gru/gru-unroll-1.conf", &job_conf2);
 	}

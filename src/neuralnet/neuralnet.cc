@@ -160,14 +160,17 @@ NetProto NeuralNet::Unrolling(const NetProto& net_conf) {
 		if (org_layer.srclayers_size() == 0) continue; // no src layer
 		for (int i = 0; i < org_layer.srclayers_size(); i ++) {
 			const string& org_layer_src = org_layer.srclayers(i);
+
+			singa::UnrollConnType unroll_conn_type = kUnrollOneToOne; // Default value
+			if (i < org_layer.unroll_conn_type_size()) unroll_conn_type = org_layer.unroll_conn_type(i);
+			unsigned int shift = 0; // Default shift value
+			if (i < org_layer.shift_size()) shift = org_layer.shift(i);
+
 			const std::vector<int> unroll_layer_srcs = layer_groups[org_layer_names[org_layer_src]];
+
 			for (unsigned int j = 0; j < layer_groups[index].size(); j ++) {
 				LayerProto* unroll_layer = conf.mutable_layer(layer_groups[index][j]);
 				// Update src layers of `unroll_layer` by considering the types
-				singa::UnrollConnType unroll_conn_type = kUnrollOneToOne; // Default value
-				if (i < org_layer.unroll_conn_type_size()) unroll_conn_type = org_layer.unroll_conn_type(i);
-				unsigned int shift = 0; // Default shift value
-				if (i < org_layer.shift_size()) shift = org_layer.shift(i);
 				if (unroll_conn_type == kUnrollOneToAll) {
 					for (int unroll_layer_src : unroll_layer_srcs) {
 						unroll_layer->add_srclayers(conf.layer(unroll_layer_src).name());

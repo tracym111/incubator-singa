@@ -158,6 +158,13 @@ NetProto NeuralNet::Unrolling(const NetProto& net_conf) {
 	for (int index = 0; index < net_conf.layer_size(); index ++) {
 		const LayerProto& org_layer = net_conf.layer(index);
 		if (org_layer.srclayers_size() == 0) continue; // no src layer
+		//TODO(fanju): add LSTM when it is ready
+		if (org_layer.type() == kGRU) { // connect GRU layers
+			for (unsigned int j = 1; j < layer_groups[index].size(); j ++) {
+				LayerProto* unroll_layer = conf.mutable_layer(layer_groups[index][j]);
+				unroll_layer->add_srclayers(conf.layer(layer_groups[index][j-1]).name());
+			}
+		}
 		for (int i = 0; i < org_layer.srclayers_size(); i ++) {
 			const string& org_layer_src = org_layer.srclayers(i);
 
